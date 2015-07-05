@@ -1,0 +1,4 @@
+#!/usr/bin/env php
+<?php
+require_once(dirname(__DIR__) . '/src/DBtrack.php');
+exit(0);
