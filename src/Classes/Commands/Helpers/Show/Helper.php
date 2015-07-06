@@ -185,7 +185,15 @@ class Helper {
 
                 // Highlight only changed columns.
                 if ($row->type == Database::TRIGGER_ACTION_UPDATE) {
-                    if (isset($actions[$rowCount]->data->{$column}) && $row->primarycolumn != $column) {
+                    $isPrimaryColumn = false;
+                    foreach ($row->primaryKeys as $key) {
+                        if ($key->name == $column) {
+                            $isPrimaryColumn = true;
+                            break;
+                        }
+                    }
+
+                    if (isset($actions[$rowCount]->data->{$column}) && !$isPrimaryColumn) {
                         $value = $this->display->getColourText($value, 'yellow');
                     }
                 }

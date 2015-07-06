@@ -24,10 +24,18 @@ class Helper {
 
     public function revert(array $allRows) {
         foreach ($allRows as $row) {
+            $where = array();
+            $params = array();
+            foreach ($row->primaryKeys as $key) {
+                $where[] = $key->name . ' = :' . $key->name;
+                $params[$key->name] = $key->value;
+            }
+            $where = implode(' AND ', $where);
+
             switch ($row->type) {
                 case Database::TRIGGER_ACTION_INSERT:
-                    $sql = "DELETE FROM {$row->table} WHERE {$row->primarycolumn} = :primary";
-                    $this->dbms->executeQuery($sql, array('primary' => $row->primaryvalue));
+                    $sql = "DELETE FROM {$row->table} WHERE {$where}";
+                    $this->dbms->executeQuery($sql, $params);
                     break;
                 case Database::TRIGGER_ACTION_DELETE:
                     $data = (array)$row->data;
@@ -42,14 +50,12 @@ class Helper {
                     break;
                 case Database::TRIGGER_ACTION_UPDATE:
                     $set = array();
-                    $params = array();
                     foreach ($row->previous as $column => $value) {
                         $set[] = $column . ' = :' . $column;
                         $params[':' . $column] = $value;
                     }
-                    $params['primarykeyvalue'] = $row->primaryvalue;
 
-                    $sql = "UPDATE {$row->table} SET ". implode(', ', $set) ." WHERE {$row->primarycolumn} = :primarykeyvalue";
+                    $sql = "UPDATE {$row->table} SET ". implode(', ', $set) ." WHERE {$where}";
                     $this->dbms->executeQuery($sql, $params);
                     break;
             }

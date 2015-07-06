@@ -26,18 +26,12 @@ class DBManager {
         $allTables = $this->dbms->getTables();
 
         // Check if the dbtrack tables are in there and remove them.
-        $indexActions = array_search('dbtrack_actions', $allTables);
-        $indexData = array_search('dbtrack_data', $allTables);
-        if ($indexActions !== false) {
-            unset($allTables[$indexActions]);
+        foreach ($allTables as $index => $table) {
+            if (substr($table, 0, 8) == 'dbtrack_') {
+                unset($allTables[$index]);
+            }
         }
-        if ($indexData !== false) {
-            unset($allTables[$indexData]);
-        }
-        // Re-index the array if required.
-        if ($indexActions !== false || $indexData !== false) {
-            $allTables = array_values($allTables);
-        }
+        $allTables = array_values($allTables);
 
         // If there was no --tables argument passed, return all tables.
         if (count($list) == 0) {
@@ -72,11 +66,17 @@ class DBManager {
      * Create track tables if required.
      */
     public function prepareTrackTables() {
-        if (!$this->dbms->tableExists('dbtrack_actions') && !$this->dbms->tableExists('dbtrack_data')) {
+        if (!$this->dbms->tableExists('dbtrack_actions') &&
+            !$this->dbms->tableExists('dbtrack_data') &&
+            !$this->dbms->tableExists('dbtrack_keys')) {
+
             $sql = $this->dbms->loadSQLTemplate('tables');
             $this->dbms->executeScript($sql);
 
-            if (!$this->dbms->tableExists('dbtrack_actions') || !$this->dbms->tableExists('dbtrack_data')) {
+            if (!$this->dbms->tableExists('dbtrack_actions') ||
+                !$this->dbms->tableExists('dbtrack_data') ||
+                !$this->dbms->tableExists('dbtrack_keys')) {
+
                 throw new \Exception('Could not create tracking tables.');
             }
         }
@@ -144,6 +144,10 @@ class DBManager {
         if ($this->dbms->tableExists('dbtrack_data')) {
             $this->dbms->deleteTable('dbtrack_data');
         }
+
+        if ($this->dbms->tableExists('dbtrack_keys')) {
+            $this->dbms->deleteTable('dbtrack_keys');
+        }
     }
 
     /**
@@ -151,6 +155,8 @@ class DBManager {
      * @return bool
      */
     public function trackingTablesExist() {
-        return $this->dbms->tableExists('dbtrack_actions') && $this->dbms->tableExists('dbtrack_data');
+        return $this->dbms->tableExists('dbtrack_actions') &&
+                $this->dbms->tableExists('dbtrack_data') &&
+                $this->dbms->tableExists('dbtrack_keys');
     }
 }

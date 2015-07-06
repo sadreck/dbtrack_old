@@ -107,7 +107,7 @@ class pgsql extends Database {
     private function _createTrigger($name, $table, $action, array $columns, array $primary) {
         $sqlTemplate = $this->loadSQLTemplate('trigger.template');
 
-        $state = (Database::TRIGGER_ACTION_DELETE) ? 'OLD' : 'NEW';
+        $state = ($action == Database::TRIGGER_ACTION_DELETE) ? 'OLD' : 'NEW';
 
         // Create the INSERT query for the primary keys.
         $primaryKeys = array();
@@ -143,7 +143,7 @@ class pgsql extends Database {
         $sql = str_replace(
             array(
                 '%NAME%',
-                '%TYPE',
+                '%TYPE%',
                 '%TABLE%',
                 '%ACTION%',
                 '%PRIMARYKEYS%',

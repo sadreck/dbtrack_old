@@ -25,7 +25,7 @@ class ActionParser {
     public function groupExists($groupId) {
         $sql = "SELECT COUNT(id) AS c FROM dbtrack_actions WHERE groupid = :groupid";
         $result = $this->dbms->getResult($sql, array('groupid' => $groupId));
-        if (!empty($result) && $result->c > 0) {
+        if (!empty($result) && (int)$result->c > 0) {
             return true;
         }
         return false;
@@ -63,7 +63,7 @@ class ActionParser {
             if ($action->type == Database::TRIGGER_ACTION_INSERT || $action->type == Database::TRIGGER_ACTION_DELETE) {
                 $fullRows[] = $action;
             } else {
-                $row = $this->getPreviousRecord($actions, $action->table, $action->primarycolumn, $action->primaryvalue);
+                $row = $this->getPreviousRecord($actions, $action->table, $action->primaryKeys);
                 $newAction = clone $action;
                 $data = clone $action->data;
                 foreach ($row as $column => $value) {
@@ -113,8 +113,11 @@ class ActionParser {
             return false;
         }
 
+        $sql = "SELECT name, value FROM dbtrack_keys WHERE actionid = :id";
+        $primaryKeys = $this->dbms->getResults($sql, array('id' => $action->id));
+
         // Get all records/columns that changed.
-        $sql = "SELECT dbd.columnname, dbd.databefore, dbd.dataafter, dba.primarycolumn, dba.primaryvalue
+        $sql = "SELECT dbd.columnname, dbd.databefore, dbd.dataafter
                 FROM dbtrack_actions dba
                 JOIN dbtrack_data dbd ON dbd.actionid = dba.id
                 WHERE dba.id = :id AND dba.actiontype = :type
@@ -127,14 +130,7 @@ class ActionParser {
 
         $data = new \stdClass();
         $previous = new \stdClass();
-        $primaryColumn = '';
-        $primaryValue = '';
         foreach ($results as $result) {
-            if (empty($primaryColumn)) {
-                $primaryColumn = $result->primarycolumn;
-                $primaryValue = $result->primaryvalue;
-            }
-
             if ($action->type == Database::TRIGGER_ACTION_INSERT) {
                 $data->{$result->columnname} = $result->dataafter;
             } else if ($action->type == Database::TRIGGER_ACTION_DELETE) {
@@ -142,7 +138,7 @@ class ActionParser {
             } else {
                 // Check if object is empty.
                 if ($data == new \stdClass()) {
-                    $data = $this->getPreviousRecord($allActions, $action->tablename, $result->primarycolumn, $result->primaryvalue);
+                    $data = $this->getPreviousRecord($allActions, $action->tablename, $primaryKeys);
 
                     // If object is still empty, we 've got a problem.
                     if ($data == new \stdClass()) {
@@ -160,8 +156,7 @@ class ActionParser {
         $return = new \stdClass();
         $return->type = $action->type;
         $return->table = $action->tablename;
-        $return->primarycolumn = $primaryColumn;
-        $return->primaryvalue = $primaryValue;
+        $return->primaryKeys = $primaryKeys;
         $return->data = $data;
         $return->previous = $previous;
 
@@ -179,7 +174,6 @@ class ActionParser {
         $columns = array();
         foreach ($results as $result) {
             $columns[$result->columnname] = true;
-            //$columns[$result->primarycolumn] = true;
         }
 
         // Cleanup current record.
@@ -196,24 +190,29 @@ class ActionParser {
      * Get the previous data of the record either from the array that's already been processed or directly from the database.
      * @param array $allActions
      * @param $tableName
-     * @param $primaryColumn
-     * @param $primaryValue
+     * @param array $primaryKeys
      * @return array|mixed|\stdClass
      */
-    protected function getPreviousRecord(array $allActions, $tableName, $primaryColumn, $primaryValue) {
+    protected function getPreviousRecord(array $allActions, $tableName, array $primaryKeys) {
         $data = new \stdClass();
         foreach ($allActions as $action) {
             if ($action->table == $tableName) {
-                if (isset($action->data->{$primaryColumn}) && $action->data->{$primaryColumn} == $primaryValue) {
+                $matchCount = 0;
+                foreach ($primaryKeys as $key) {
+                    if (isset($action->data->{$key->name}) && $action->data->{$key->name} == $key->value) {
+                        $matchCount++;
+                    }
+                }
+
+                if ($matchCount == count($primaryKeys)) {
                     $data = clone $action->data;
-                    break;
                 }
             }
         }
 
         // Check if record was not found.
         if ($data == new \stdClass()) {
-            $data = $this->queryPreviousRecord($tableName, $primaryColumn, $primaryValue);
+            $data = $this->queryPreviousRecord($tableName, $primaryKeys);
         }
 
         return $data;
@@ -222,14 +221,20 @@ class ActionParser {
     /**
      * Get previous state of a row directly from the database.
      * @param $table
-     * @param $primaryColumn
-     * @param $primaryValue
+     * @param array $primaryKeys
      * @return array|mixed
-     * @internal param \stdClass $row
      */
-    protected function queryPreviousRecord($table, $primaryColumn, $primaryValue) {
-        $sql = "SELECT * FROM {$table} WHERE {$primaryColumn} = :primary";
-        return $this->dbms->getResult($sql, array('primary' => $primaryValue));
+    protected function queryPreviousRecord($table, array $primaryKeys) {
+        $where = array();
+        $params = array();
+        foreach ($primaryKeys as $key) {
+            $where[] = $key->name . ' = :' . $key->name;
+            $params[$key->name] = $key->value;
+        }
+        $where = implode(' AND ', $where);
+
+        $sql = "SELECT * FROM {$table} WHERE {$where}";
+        return $this->dbms->getResult($sql, $params);
     }
 
     /**
