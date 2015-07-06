@@ -4,8 +4,7 @@ CREATE TABLE dbtrack_actions (
   timeadded INT NOT NULL DEFAULT 0,
   actiontype SMALLINT NOT NULL DEFAULT 0,
   groupid INT NOT NULL DEFAULT 0,
-  primarycolumn VARCHAR(255) NOT NULL DEFAULT '',
-  primaryvalue VARCHAR(255) NOT NULL DEFAULT ''
+  message TEXT
 );
 
 CREATE INDEX ix_tablename ON dbtrack_actions(tablename);
@@ -23,3 +22,12 @@ CREATE TABLE dbtrack_data (
 
 CREATE INDEX ix_actionid ON dbtrack_data(actionid);
 CREATE INDEX ix_columnname ON dbtrack_data(columnname);
+
+CREATE TABLE dbtrack_keys (
+  id SERIAL CONSTRAINT keyskey PRIMARY KEY,
+  actionid INT NOT NULL DEFAULT 0,
+  name VARCHAR(255) NOT NULL DEFAULT '',
+  value TEXT
+);
+
+CREATE INDEX ix_keyactionid ON dbtrack_keys(actionid);

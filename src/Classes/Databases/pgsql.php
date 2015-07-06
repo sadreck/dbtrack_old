@@ -99,131 +99,67 @@ class pgsql extends Database {
         $columns = $this->getTableColumns($table);
         $primary = $this->getPrimaryKey($table);
 
-        if (count($primary) > 1) {
-            throw new \Exception('Primary keys with multiple fields are not supported (yet). Table: ' . $table);
-        }
-
-        $this->_createTriggerInsert('dbtrack_' . $table . '_insert', $table, $columns, $primary);
-        $this->_createTriggerDelete('dbtrack_' . $table . '_delete', $table, $columns, $primary);
-        $this->_createTriggerUpdate('dbtrack_' . $table . '_update', $table, $columns, $primary);
+        $this->_createTrigger('dbtrack_' . $table . '_insert', $table, Database::TRIGGER_ACTION_INSERT, $columns, $primary);
+        $this->_createTrigger('dbtrack_' . $table . '_delete', $table, Database::TRIGGER_ACTION_DELETE, $columns, $primary);
+        $this->_createTrigger('dbtrack_' . $table . '_update', $table, Database::TRIGGER_ACTION_UPDATE, $columns, $primary);
     }
 
-    /**
-     * Create a trigger for INSERT.
-     * @param $name
-     * @param $table
-     * @param array $columns
-     */
-    private function _createTriggerInsert($name, $table, array $columns, $primary) {
-        $sqlTemplate = $this->loadSQLTemplate('trigger.insert');
-        if (count($primary) == 1) {
-            $primary = reset($primary);
+    private function _createTrigger($name, $table, $action, array $columns, array $primary) {
+        $sqlTemplate = $this->loadSQLTemplate('trigger.template');
+
+        $state = (Database::TRIGGER_ACTION_DELETE) ? 'OLD' : 'NEW';
+
+        // Create the INSERT query for the primary keys.
+        $primaryKeys = array();
+        foreach ($primary as $key) {
+            $primaryKeys[] = "INSERT INTO dbtrack_keys(actionid, name, value)
+                              VALUES(@lastid, '{$key}', {$state}.{$key});";
         }
 
+        // Create the INSERT query for the actual data that changed.
         $inserts = array();
         foreach ($columns as $column) {
-            $inserts[] = "INSERT INTO dbtrack_data(actionid, columnname, dataafter)
-                          VALUES(lastid, '{$column}', NEW.{$column});";
-        }
-        $inserts = implode(PHP_EOL, $inserts);
+            switch ($action) {
+                case Database::TRIGGER_ACTION_INSERT:
+                    $inserts[] = "INSERT INTO dbtrack_data(actionid, columnname, dataafter)
+                                  VALUES(lastid, '{$column}', {$state}.{$column});";
+                    break;
+                case Database::TRIGGER_ACTION_UPDATE:
+                    $inserts[] = "IF OLD.{$column} <> NEW.{$column} THEN
+                                    INSERT INTO dbtrack_data(actionid, columnname, databefore, dataafter)
+                                    VALUES(lastid, '{$column}', OLD.{$column}, NEW.{$column});
+                                  END IF;";
+                    break;
+                case Database::TRIGGER_ACTION_DELETE:
+                    $inserts[] = "INSERT INTO dbtrack_data(actionid, columnname, databefore)
+                                  VALUES(lastid, '{$column}', {$state}.{$column});";
+                    break;
+            }
 
+        }
+
+
+        // Replace variables.
         $sql = str_replace(
             array(
                 '%NAME%',
+                '%TYPE',
                 '%TABLE%',
                 '%ACTION%',
-                '%PRIMARY%',
+                '%PRIMARYKEYS%',
                 '%INSERTS%'
             ),
             array(
                 $name,
+                $this->actionDescriptions[$action],
                 $table,
-                self::TRIGGER_ACTION_INSERT,
-                $primary,
-                $inserts
+                $action,
+                implode(PHP_EOL, $primaryKeys),
+                implode(PHP_EOL, $inserts)
             ),
             $sqlTemplate
         );
-        $this->executeScript($sql);
-    }
 
-    /**
-     * Create a trigger for DELETE.
-     * @param $name
-     * @param $table
-     * @param array $columns
-     */
-    private function _createTriggerDelete($name, $table, array $columns, $primary) {
-        $sqlTemplate = $this->loadSQLTemplate('trigger.delete');
-        if (count($primary) == 1) {
-            $primary = reset($primary);
-        }
-
-        $inserts = array();
-        foreach ($columns as $column) {
-            $inserts[] = "INSERT INTO dbtrack_data(actionid, columnname, databefore)
-                          VALUES(lastid, '{$column}', OLD.{$column});";
-        }
-        $inserts = implode(PHP_EOL, $inserts);
-
-        $sql = str_replace(
-            array(
-                '%NAME%',
-                '%TABLE%',
-                '%ACTION%',
-                '%PRIMARY%',
-                '%INSERTS%'
-            ),
-            array(
-                $name,
-                $table,
-                self::TRIGGER_ACTION_DELETE,
-                $primary,
-                $inserts
-            ),
-            $sqlTemplate
-        );
-        $this->executeScript($sql);
-    }
-
-    /**
-     * Create a trigger for UPDATE.
-     * @param $name
-     * @param $table
-     * @param array $columns
-     */
-    private function _createTriggerUpdate($name, $table, array $columns, $primary) {
-        $sqlTemplate = $this->loadSQLTemplate('trigger.update');
-        if (count($primary) == 1) {
-            $primary = reset($primary);
-        }
-
-        $inserts = array();
-        foreach ($columns as $column) {
-            $inserts[] = "IF OLD.{$column} <> NEW.{$column} THEN
-                            INSERT INTO dbtrack_data(actionid, columnname, databefore, dataafter)
-                            VALUES(lastid, '{$column}', OLD.{$column}, NEW.{$column});
-                          END IF;";
-        }
-        $inserts = implode(PHP_EOL, $inserts);
-
-        $sql = str_replace(
-            array(
-                '%NAME%',
-                '%TABLE%',
-                '%ACTION%',
-                '%PRIMARY%',
-                '%INSERTS%'
-            ),
-            array(
-                $name,
-                $table,
-                self::TRIGGER_ACTION_UPDATE,
-                $primary,
-                $inserts
-            ),
-            $sqlTemplate
-        );
-        $this->executeScript($sql);
+        $this->executeQuery($sql);
     }
 }
