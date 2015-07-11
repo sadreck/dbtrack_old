@@ -2,6 +2,7 @@
 
 namespace DBtrack\Commands;
 
+use DBtrack\Base\AppHandler;
 use DBtrack\Base\Command;
 
 class stop extends Command {

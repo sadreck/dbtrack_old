@@ -89,14 +89,6 @@ class DBManager {
     public function createTriggers(array $tables) {
         foreach ($tables as $table) {
             $this->dbms->createTrigger($table);
-
-            $eventData = array(
-                'event' => 'triggerCreated',
-                'params' => (object)array(
-                    'table' => $table
-                )
-            );
-            Events::triggerEvent((object)$eventData);
         }
     }
 
