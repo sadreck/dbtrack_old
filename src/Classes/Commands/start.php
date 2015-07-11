@@ -2,6 +2,7 @@
 
 namespace DBtrack\Commands;
 
+use DBtrack\Base\AppHandler;
 use DBtrack\Base\Command;
 
 class start extends Command {
@@ -61,5 +62,23 @@ class start extends Command {
             $this->userInteraction->outputMessage("\t\t" . 'Track all tables except table1.');
             $this->userInteraction->outputMessage('');
         }
+    }
+
+    public function eventHandlers() {
+        $events = array();
+
+        $event = array(
+            'event' => 'triggerCreated',
+            'function' => __CLASS__ . '::eventTriggerCreated'
+        );
+
+        $events[] = (object)$event;
+
+        return $events;
+    }
+
+    public static function eventTriggerCreated(\stdClass $params) {
+        $display = AppHandler::getObject('UserInteraction');
+        $display->outputMessage('.', false);
     }
 }

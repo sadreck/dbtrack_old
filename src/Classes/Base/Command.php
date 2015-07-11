@@ -34,7 +34,30 @@ abstract class Command extends DBtrack {
         $this->options = $options;
         $this->userInteraction = AppHandler::getObject('UserInteraction');
 
+        $this->loadEventListeners();
+
         parent::__construct();
+    }
+
+    /**
+     * Load event listeners if there are any.
+     */
+    protected function loadEventListeners() {
+        // Load event handlers if there are any.
+        if (!method_exists($this, 'eventHandlers')) {
+            return false;
+        }
+
+        $events = $this->eventHandlers();
+        if (empty($events)) {
+            return false;
+        }
+
+        foreach ($events as $event) {
+            if (!Events::addEventListener($event)) {
+                throw new \Exception('Could not add event listener for: ' . print_r($events, true));
+            }
+        }
     }
 
     /**
