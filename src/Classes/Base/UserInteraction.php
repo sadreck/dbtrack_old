@@ -63,12 +63,9 @@ class UserInteraction extends ColourTerminal {
      * @return string
      */
     public function promptUser($message) {
-        echo $message;
+        fputs(STDOUT, $message);
 
-        $handle = fopen('php://stdin', 'r');
-        $input = trim(fgets($handle));
-        fclose($handle);
-
+        $input = trim(fgets(STDIN));
         return $input;
     }
 
@@ -78,9 +75,9 @@ class UserInteraction extends ColourTerminal {
      * @param bool $newLine
      */
     public function outputMessage($message, $newLine = true) {
-        echo $message;
+        fputs(STDOUT, $message);
         if ($newLine) {
-            echo PHP_EOL;
+            fputs(STDOUT, PHP_EOL);
         }
     }
 }

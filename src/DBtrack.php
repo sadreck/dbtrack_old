@@ -9,5 +9,5 @@ try {
     $manager = new Manager($argv);
     $manager->run();
 } catch (Exception $e) {
-    echo $e->getMessage(), PHP_EOL, $e->getTraceAsString(), PHP_EOL;
+    fputs(STDOUT, $e->getMessage() . PHP_EOL . $e->getTraceAsString() . PHP_EOL);
 }
