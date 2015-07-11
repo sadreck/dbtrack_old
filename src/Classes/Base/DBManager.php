@@ -87,8 +87,15 @@ class DBManager {
      * @param array $tables
      */
     public function createTriggers(array $tables) {
+        $count = count($tables);
+        $i = 0;
+        $progress = new ProgressBar();
+
         foreach ($tables as $table) {
+            ++$i;
             $this->dbms->createTrigger($table);
+
+            $progress->update($i, $count);
         }
     }
 
@@ -97,9 +104,17 @@ class DBManager {
      */
     public function clearTriggers() {
         $triggers = $this->dbms->getTriggers();
+
+        $count = count($triggers);
+        $i = 0;
+        $progress = new ProgressBar();
+
         foreach ($triggers as $trigger) {
+            ++$i;
             if (substr($trigger, 0, 8) == 'dbtrack_') {
                 $this->dbms->deleteTrigger($trigger);
+
+                $progress->update($i, $count);
             }
         }
     }
