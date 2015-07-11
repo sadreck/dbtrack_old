@@ -10,8 +10,8 @@ class DBManager {
      * Initialise Database Manager.
      * @param Database $dbms
      */
-    public function __construct(Database $dbms) {
-        $this->dbms = $dbms;
+    public function __construct() {
+        $this->dbms = AppHandler::getObject('Database');
     }
 
     /**

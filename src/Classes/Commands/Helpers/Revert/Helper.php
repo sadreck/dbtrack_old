@@ -2,6 +2,7 @@
 
 namespace DBtrack\Commands\Helpers\Revert;
 
+use DBtrack\Base\AppHandler;
 use DBtrack\Base\Database;
 use DBtrack\Base\DBManager;
 use DBtrack\Base\UserInteraction;
@@ -16,10 +17,10 @@ class Helper {
     /** @var UserInteraction */
     protected $display = null;
 
-    public function __construct(Database $dbms, DBManager $dbManager) {
-        $this->dbms = $dbms;
-        $this->dbManager = $dbManager;
-        $this->display = new UserInteraction();
+    public function __construct() {
+        $this->dbms = AppHandler::getObject('Database');
+        $this->dbManager = AppHandler::getObject('DBManager');
+        $this->display = AppHandler::getObject('UserInteraction');
     }
 
     public function revert(array $allRows) {

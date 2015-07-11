@@ -2,6 +2,9 @@
 
 namespace DBtrack;
 
+use DBtrack\Base\AppHandler;
+use DBtrack\Base\UserInteraction;
+
 class Manager {
 
     /** @var CliParser */
@@ -12,6 +15,8 @@ class Manager {
      * @param array $arguments
      */
     public function __construct(array $arguments) {
+        AppHandler::setObject('UserInteraction', new UserInteraction());
+
         $this->cli = new CliParser($arguments);
     }
 

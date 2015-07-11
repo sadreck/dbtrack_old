@@ -67,7 +67,8 @@ class DBtrack {
             throw new \Exception('Unsupported database type: ' . $type);
         }
 
-        $this->dbms = new $className($hostname, $database, $username, $password);
+        $this->dbms = AppHandler::setObject('Database', new $className($hostname, $database, $username, $password));
+
         return $this->dbms->connect();
     }
 

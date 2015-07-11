@@ -12,9 +12,9 @@ class ActionParser {
     /** @var array Table cache. */
     private $_tables = array();
 
-    public function __construct(Database $dbms, DBManager $dbManager) {
-        $this->dbms = $dbms;
-        $this->dbManager = $dbManager;
+    public function __construct() {
+        $this->dbms = AppHandler::getObject('Database');
+        $this->dbManager = AppHandler::getObject('DBManager');
     }
 
     /**

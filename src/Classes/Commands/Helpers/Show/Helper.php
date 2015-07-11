@@ -3,6 +3,7 @@
 namespace DBtrack\Commands\Helpers\Show;
 
 use DBtrack\Base\ActionParser;
+use DBtrack\Base\AppHandler;
 use DBtrack\Base\Database;
 use DBtrack\Base\DBManager;
 use DBtrack\Base\UserInteraction;
@@ -32,11 +33,11 @@ class Helper {
     /** @var array */
     protected $ignoreTables = array();
 
-    public function __construct(Database $dbms, DBManager $dbManager) {
-        $this->dbms = $dbms;
-        $this->dbManager = $dbManager;
-        $this->display = new UserInteraction();
-        $this->actionParser = new ActionParser($this->dbms, $this->dbManager);
+    public function __construct() {
+        $this->dbms = AppHandler::getObject('Database');
+        $this->dbManager = AppHandler::getObject('DBManager');
+        $this->display = AppHandler::getObject('UserInteraction');
+        $this->actionParser = new ActionParser();
         $this->resetFilterActions();
     }
 

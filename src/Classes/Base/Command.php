@@ -32,7 +32,7 @@ abstract class Command extends DBtrack {
      */
     public function __construct(array $options) {
         $this->options = $options;
-        $this->userInteraction = new UserInteraction();
+        $this->userInteraction = AppHandler::getObject('UserInteraction');
 
         parent::__construct();
     }
@@ -56,7 +56,7 @@ abstract class Command extends DBtrack {
             throw new \Exception('Could not connect to database');
         }
 
-        $this->dbManager = new DBManager($this->dbms);
+        $this->dbManager = AppHandler::setObject('DBManager', new DBManager($this->dbms));
 
         return true;
     }

@@ -20,8 +20,8 @@ class revert extends Command {
             throw new \Exception('Tracking tables do not exist. Use <dbt start> to start.');
         }
 
-        $actionParser = new ActionParser($this->dbms, $this->dbManager);
-        $this->helper = new Helper($this->dbms, $this->dbManager);
+        $actionParser = new ActionParser();
+        $this->helper = new Helper();
 
         $options = $this->parseOptions($this->options);
         if (!isset($options[0]) || empty($options[0])) {

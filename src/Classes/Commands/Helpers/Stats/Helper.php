@@ -2,6 +2,7 @@
 
 namespace DBtrack\Commands\Helpers\Stats;
 
+use DBtrack\Base\AppHandler;
 use DBtrack\Base\Database;
 use DBtrack\Base\DBManager;
 use DBtrack\Base\UserInteraction;
@@ -21,10 +22,10 @@ class Helper {
      * @param Database $dbms
      * @param DBManager $dbManager
      */
-    public function __construct(Database $dbms, DBManager $dbManager) {
-        $this->dbms = $dbms;
-        $this->dbManager = $dbManager;
-        $this->display = new UserInteraction();
+    public function __construct() {
+        $this->dbms = AppHandler::getObject('Database');
+        $this->dbManager = AppHandler::getObject('DBManager');
+        $this->display = AppHandler::getObject('UserInteraction');
     }
 
     /**

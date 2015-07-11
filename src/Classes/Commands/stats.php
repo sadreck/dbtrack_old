@@ -12,7 +12,7 @@ class stats extends Command {
     public function execute() {
         $this->prepare();
 
-        $this->helper = new Helper($this->dbms, $this->dbManager);
+        $this->helper = new Helper();
 
         $this->helper->showStatsList();
         return true;
