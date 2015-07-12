@@ -9,10 +9,16 @@ class stop extends Command {
     public function execute() {
         $this->prepare();
 
+        $options = $this->parseOptions();
+        $message = '';
+        if (isset($options['message'], $options['message'][0])) {
+            $message = $options['message'][0];
+        }
+
         $this->dbManager->clearTriggers();
 
         $groupId = $this->getGroupID();
-        $actionCount = $this->dbManager->commit($groupId);
+        $actionCount = $this->dbManager->commit($groupId, $message);
 
         $this->userInteraction->outputMessage('Tracking stopped. '. $actionCount .' action(s) tracked.');
         return true;

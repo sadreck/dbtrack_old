@@ -137,9 +137,9 @@ class DBManager {
      * Commit current tracking data.
      * @param $groupId
      */
-    public function commit($groupId) {
-        $sql = "UPDATE dbtrack_actions SET groupid = :groupid WHERE groupid = 0";
-        $this->dbms->executeQuery($sql, array('groupid' => $groupId));
+    public function commit($groupId, $commitMessage = '') {
+        $sql = "UPDATE dbtrack_actions SET groupid = :groupid, message = :message WHERE groupid = 0";
+        $this->dbms->executeQuery($sql, array('groupid' => $groupId, 'message' => $commitMessage));
         // Count new actions.
         $count = $this->dbms->getResult(
             'SELECT COALESCE(COUNT(id), 0) AS actions FROM dbtrack_actions WHERE groupid = :groupid',

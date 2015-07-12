@@ -33,9 +33,9 @@ class Helper {
      * @return bool
      */
     public function showStatsList() {
-        $sql = "SELECT groupid, MIN(timeadded) AS mintime, MAX(timeadded) AS maxtime, COUNT(id) AS numactions
+        $sql = "SELECT groupid, message, MIN(timeadded) AS mintime, MAX(timeadded) AS maxtime, COUNT(id) AS numactions
                 FROM dbtrack_actions
-                GROUP BY groupid
+                GROUP BY groupid, message
                 ORDER BY MIN(timeadded)";
         $results = $this->dbms->getResults($sql);
         if (empty($results)) {
@@ -43,8 +43,8 @@ class Helper {
             return true;
         }
 
-        $this->display->setHeader(array('Group', 'From', 'To', 'Actions'));
-        $this->display->setPadding(array(5, 19, 19, 10));
+        $this->display->setHeader(array('Group', 'From', 'To', 'Actions', 'Message'));
+        $this->display->setPadding(array(5, 19, 19, 10, 50));
 
         $this->display->showHeader();
 
@@ -54,6 +54,7 @@ class Helper {
                 date('d/m/Y H:i:s', $result->mintime),
                 date('d/m/Y H:i:s', $result->maxtime),
                 $result->numactions,
+                $result->message
             );
             $this->display->showLine($line);
         }
