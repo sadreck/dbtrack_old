@@ -33,6 +33,9 @@ class Helper {
     /** @var array */
     protected $ignoreTables = array();
 
+    /** @var int */
+    protected $resultsPerPage = 10;
+
     public function __construct() {
         $this->dbms = AppHandler::getObject('Database');
         $this->dbManager = AppHandler::getObject('DBManager');
@@ -54,7 +57,7 @@ class Helper {
         $actions = $this->actionParser->parseGroup($groupId);
         $fullRows = $this->actionParser->getFullRows($actions);
         $fullRows = $this->filterRows($fullRows);
-        $this->displayRows($fullRows, $actions);
+        $this->displayRows($fullRows, $actions, $this->resultsPerPage);
     }
 
     /**
@@ -161,7 +164,7 @@ class Helper {
      * @param array $actions
      * @throws \Exception
      */
-    protected function displayRows(array $fullRows, array $actions) {
+    protected function displayRows(array $fullRows, array $actions, $perPage) {
         // The position is the same for $fullRows and $changedRows (for cross referencing purposes).
         $rowCount = 0;
         foreach ($fullRows as $row) {
@@ -209,6 +212,13 @@ class Helper {
             $this->display->showLine();
 
             ++$rowCount;
+
+            if ($perPage > 0 && ($rowCount % $perPage == 0)) {
+                $input = $this->display->promptUser('Press ENTER key for next page...');
+                if (strtolower($input) == 'q') {
+                    break;
+                }
+            }
         }
     }
 
@@ -238,6 +248,16 @@ class Helper {
             if ($key !== false) {
                 unset($this->filterActions[$key]);
             }
+        }
+    }
+
+    /**
+     * Set number of results to be displayed per page.
+     * @param $count
+     */
+    public function setResultsPerPage($count) {
+        if ((int)$count >= 0) {
+            $this->resultsPerPage = (int)$count;
         }
     }
 

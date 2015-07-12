@@ -39,15 +39,23 @@ class ActionParser {
                 ORDER BY id DESC";
         $results = $this->dbms->getResults($sql, array('groupid' => $groupId));
 
+        $progressBar = new ProgressBar(100);
+        $count = count($results);
+        $i = 0;
         $actions = array();
         foreach ($results as $result) {
+            $progressBar->update(++$i, $count);
+
             $action = $this->parseAction($result, $actions);
             if ($action === false) {
                 continue;
             }
-            array_unshift($actions, $action);
+            // This is faster then array_unshift.
+            $actions[] = $action;
         }
 
+        // Reversing because using array_unshift is too slow.
+        $actions = array_reverse($actions);
         return $actions;
     }
 
@@ -195,7 +203,10 @@ class ActionParser {
      */
     protected function getPreviousRecord(array $allActions, $tableName, array $primaryKeys) {
         $data = new \stdClass();
-        foreach ($allActions as $action) {
+        //foreach ($allActions as $action) {
+        for ($i = count($allActions) - 1; $i >= 0; $i--) {
+            $action = $allActions[$i];
+
             if ($action->table == $tableName) {
                 $matchCount = 0;
                 foreach ($primaryKeys as $key) {

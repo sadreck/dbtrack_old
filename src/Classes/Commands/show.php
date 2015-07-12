@@ -19,7 +19,7 @@ class show extends Command {
 
         $this->helper = new Helper();
 
-        $options = $this->parseOptions($this->options);
+        $options = $this->parseOptions();
         if (!isset($options[0]) || empty($options[0])) {
             throw new \Exception('No dbtrack group id specified. Use <dbt stats> to get one.');
         }
@@ -42,6 +42,10 @@ class show extends Command {
 
         if (isset($options['ignore-tables'])) {
             $this->helper->setFilterIgnoreTables($options['ignore-tables']);
+        }
+
+        if (isset($options['per-page'])) {
+            $this->helper->setResultsPerPage($options['per-page'][0]);
         }
 
         if (isset($options['export'], $options['export-path'])) {

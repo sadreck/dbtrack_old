@@ -62,6 +62,7 @@ class ProgressBar {
         $output .= str_repeat($this->progressCharacter, $bar);
         if ($bar < $width) {
             $output .= '>';
+            $output .= str_repeat(' ', $width - $bar - 1);
         }
         $output .= ']';
 
