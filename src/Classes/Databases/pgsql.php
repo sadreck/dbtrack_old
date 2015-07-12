@@ -48,25 +48,24 @@ class pgsql extends Database {
     }
 
     public function deleteTrigger($name) {
-        $table = $this->getTriggerTable($name);
+        $table = $this->getTableFromTrigger($name);
         if (empty($table)) {
             return false;
         }
-        $table = reset($table);
 
         $statement = $this->connection->query("DROP TRIGGER IF EXISTS {$name} ON {$table}");
         $statement = $this->connection->query("DROP FUNCTION IF EXISTS {$name}_function()");
     }
 
-    protected function getTriggerTable($name) {
-        $sql = "SELECT event_object_table
+    public function getTableFromTrigger($trigger) {
+        $sql = "SELECT event_object_table AS table_name
                 FROM information_schema.triggers
                 WHERE trigger_catalog = :schema AND trigger_schema = 'public' AND trigger_name = :trigger";
-        $statement = $this->connection->prepare($sql);
-        $statement->bindParam(':schema', $this->config->database);
-        $statement->bindParam(':trigger', $name);
-        $statement->execute();
-        return $statement->fetchAll(\PDO::FETCH_COLUMN);
+        $result = $this->getResult($sql, array('schema' => $this->config->database, 'trigger' => $trigger));
+        if (empty($result)) {
+            return '';
+        }
+        return $result->table_name;
     }
 
     public function deleteTable($table) {
@@ -160,6 +159,17 @@ class pgsql extends Database {
             $sqlTemplate
         );
 
-        $this->executeQuery($sql);
+        $this->executeScript($sql);
+    }
+
+    public function getChecksum($table) {
+        $checksum = $this->getResult(
+            "SELECT MD5(STRING_AGG(MD5(checktable::TEXT), '' ORDER BY MD5(checktable::TEXT))) AS checksum
+             FROM {$table} checktable"
+        );
+        if (empty($checksum)) {
+            return 0;
+        }
+        return $checksum->checksum ? $checksum->checksum : 0;
     }
 }

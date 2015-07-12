@@ -16,7 +16,6 @@ class Manager {
      */
     public function __construct(array $arguments) {
         AppHandler::setObject('UserInteraction', new UserInteraction());
-
         $this->cli = new CliParser($arguments);
     }
 

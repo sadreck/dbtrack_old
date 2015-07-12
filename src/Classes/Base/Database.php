@@ -224,4 +224,18 @@ abstract class Database {
      * @return mixed
      */
     abstract public function getPrimaryKey($table);
+
+    /**
+     * Return the table's checksum. Used to check if a table has been changed.
+     * @param $table
+     * @return mixed
+     */
+    abstract public function getChecksum($table);
+
+    /**
+     * Return the table the trigger is created for.
+     * @param $trigger
+     * @return mixed
+     */
+    abstract public function getTableFromTrigger($trigger);
 }

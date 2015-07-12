@@ -139,4 +139,49 @@ class DBtrack {
         $result = $this->dbms->getResult($sql);
         return ++$result->groupid;
     }
+
+    /**
+     * Return stored checksums from previous session.
+     * @return array
+     */
+    protected function loadStoredChecksums() {
+        if (!file_exists($this->dbtDirectory . '/checksums')) {
+            return array();
+        }
+
+        $data = file_get_contents($this->dbtDirectory . '/checksums');
+        if (empty($data)) {
+            return array();
+        }
+
+        return json_decode($data, true);
+    }
+
+    /**
+     * Save checksums for chain validation.
+     * @param array $checksums
+     * @return bool
+     */
+    protected function saveChecksums(array $checksums) {
+        if (!$this->clearChecksums()) {
+            // Could not delete checksum file.
+            return false;
+        }
+
+        file_put_contents($this->dbtDirectory . '/checksums', json_encode($checksums));
+        if (!file_exists($this->dbtDirectory . '/checksums')) {
+            // Could not create checksums file.
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Remove file that stores the chain checksums.
+     */
+    protected function clearChecksums() {
+        @unlink($this->dbtDirectory . '/checksums');
+        return !file_exists($this->dbtDirectory . '/checksums');
+    }
 }

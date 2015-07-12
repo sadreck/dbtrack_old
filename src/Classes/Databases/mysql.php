@@ -101,7 +101,7 @@ class mysql extends Database {
             $sqlTemplate
         );
 
-        $this->executeQuery($sql);
+        $this->executeScript($sql);
     }
 
     public function getTriggers() {
@@ -132,5 +132,21 @@ class mysql extends Database {
         }
 
         return $columns;
+    }
+
+    public function getChecksum($table) {
+        $checksum = $this->getResult("CHECKSUM TABLE {$table}");
+        if (empty($checksum)) {
+            return 0;
+        }
+        return $checksum->Checksum;
+    }
+
+    public function getTableFromTrigger($trigger) {
+        $record = $this->getResult("SHOW TRIGGERS WHERE `Trigger` = :trigger", array('trigger' => $trigger));
+        if (empty($record)) {
+            return '';
+        }
+        return $record->Table;
     }
 }

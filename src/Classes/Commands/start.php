@@ -2,7 +2,7 @@
 
 namespace DBtrack\Commands;
 
-use DBtrack\Base\AppHandler;
+use DBtrack\Base\ChainManager;
 use DBtrack\Base\Command;
 
 class start extends Command {
@@ -15,13 +15,13 @@ class start extends Command {
             $options['tables'] = array();
         }
 
+        if ($this->dbManager->hasTriggers()) {
+            throw new \Exception('dbtrack is already running.');
+        }
+
         $trackTables = $this->dbManager->getTables($options['tables']);
         if (count($trackTables) == 0) {
             throw new \Exception('Could not find any tables to track.');
-        }
-
-        if ($this->dbManager->hasTriggers()) {
-            throw new \Exception('dbtrack is already running.');
         }
 
         if (isset($options['ignore-tables'])) {
@@ -34,11 +34,36 @@ class start extends Command {
             $trackTables = array_values($trackTables);
         }
 
+        $chainManager = new ChainManager();
+        $chain = $chainManager->validateChain($trackTables);
+        if ($chain !== true) {
+            if (!isset($options['force'])) {
+                if ($chain == ChainManager::ERROR_CHAIN_TABLE_MISMATCH) {
+                    $this->userInteraction->outputMessage(
+                        'It has been detected that your are trying to track a different number of tables than you have previously.'
+                    );
+                } else if ($chain == ChainManager::ERROR_CHAIN_TABLE_CHANGED) {
+                    $this->userInteraction->outputMessage(
+                        'It has been detected that one or more tables you are trying to track have been updated outside of a tracking session.'
+                    );
+                }
+                $this->userInteraction->outputMessage(
+                    'This will result in breaking the tracking chain and you will not be able to revert to a previous state.'
+                );
+                throw new \Exception('Checksum mismatch - tracking chain will break. Use --force to force tracking.');
+            }
+
+            $this->dbManager->ChainBroken();
+        }
+
         // Prepare all required tables.
         $this->dbManager->prepareTrackTables();
 
         // Create triggers.
         $this->dbManager->createTriggers($trackTables);
+
+        // Save current checksum (for future chain checks).
+        $chainManager->save($trackTables);
 
         $this->userInteraction->outputMessage('Tracking running for '. count($trackTables) .' table(s)...');
         return true;

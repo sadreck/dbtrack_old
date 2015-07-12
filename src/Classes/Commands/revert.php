@@ -3,6 +3,7 @@
 namespace DBtrack\Commands;
 
 use DBtrack\Base\ActionParser;
+use DBtrack\Base\ChainManager;
 use DBtrack\Base\Command;
 use DBtrack\Commands\Helpers\Revert\Helper;
 
@@ -21,15 +22,20 @@ class revert extends Command {
         }
 
         $actionParser = new ActionParser();
+        $chainManager = new ChainManager();
         $this->helper = new Helper();
 
-        $options = $this->parseOptions($this->options);
+        $options = $this->parseOptions();
         if (!isset($options[0]) || empty($options[0])) {
             throw new \Exception('No dbtrack group id specified. Use <dbt stats> to get one.');
         }
 
         if (!$actionParser->groupExists($options[0])) {
             throw new \Exception('Group ID does not exist: ' . $options[0]);
+        } else if ($chainManager->isBrokenChain($options[0]) && !isset($options['force'])) {
+            throw new \Exception(
+                'Group ID has a broken tracking chain. Reverting to it may cause data inconsistency. Use --force to bypass this check.'
+            );
         }
 
         $allGroups = $actionParser->getAllGroups($options[0]);
@@ -56,6 +62,9 @@ class revert extends Command {
             $this->dbms->rollbackTransaction();
             throw new \Exception($e->getMessage(), 0, $e);
         }
+
+        // Clear checksum chain.
+        $chainManager->clearChecksums();
 
         $this->userInteraction->outputMessage($revertedActions . ' action(s) have been reverted.');
         return true;

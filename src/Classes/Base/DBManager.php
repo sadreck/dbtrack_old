@@ -174,4 +174,41 @@ class DBManager {
                 $this->dbms->tableExists('dbtrack_data') &&
                 $this->dbms->tableExists('dbtrack_keys');
     }
+
+    /**
+     * Return checksums for the specified tables.
+     * @param array $tables
+     * @return array
+     */
+    public function getChecksums(array $tables) {
+        $checksums = array();
+        foreach ($tables as $table) {
+            $checksums[$table] = $this->dbms->getChecksum($table);
+        }
+        return $checksums;
+    }
+
+    /**
+     * Get all tables that are currently tracked.
+     * @return array
+     */
+    public function getTrackedTables() {
+        $tables = array();
+        $triggers = $this->dbms->getTriggers();
+        foreach ($triggers as $trigger) {
+            $table = $this->dbms->getTableFromTrigger($trigger);
+            if (!empty($table) && !in_array($table, $tables)) {
+                $tables[] = $table;
+            }
+        }
+
+        return $tables;
+    }
+
+    /**
+     * Mark the chain as broken.
+     */
+    public function ChainBroken() {
+        $this->dbms->executeQuery("UPDATE dbtrack_actions SET brokenchain = 1 WHERE brokenchain = 0");
+    }
 }

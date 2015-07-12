@@ -24,6 +24,9 @@ class reset extends Command {
         // Drop table.
         $this->dbManager->deleteTrackTables();
 
+        // Clean chain file.
+        $this->clearChecksums();
+
         $this->userInteraction->outputMessage('dbtrack - all triggers and tables have been dropped.');
         return true;
     }

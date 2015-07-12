@@ -2,7 +2,7 @@
 
 namespace DBtrack\Commands;
 
-use DBtrack\Base\AppHandler;
+use DBtrack\Base\ChainManager;
 use DBtrack\Base\Command;
 
 class stop extends Command {
@@ -15,10 +15,16 @@ class stop extends Command {
             $message = $options['message'][0];
         }
 
+        $tables = $this->dbManager->getTrackedTables();
+
         $this->dbManager->clearTriggers();
 
         $groupId = $this->getGroupID();
         $actionCount = $this->dbManager->commit($groupId, $message);
+
+        // Save current checksum.
+        $chainManager = new ChainManager();
+        $chainManager->save($tables);
 
         $this->userInteraction->outputMessage('Tracking stopped. '. $actionCount .' action(s) tracked.');
         return true;

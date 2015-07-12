@@ -4,6 +4,7 @@ CREATE TABLE dbtrack_actions (
   timeadded INT NOT NULL DEFAULT 0,
   actiontype SMALLINT NOT NULL DEFAULT 0,
   groupid INT NOT NULL DEFAULT 0,
+  brokenchain SMALLINT NOT NULL DEFAULT 0,
   message TEXT
 );
 
@@ -11,6 +12,7 @@ CREATE INDEX ix_tablename ON dbtrack_actions(tablename);
 CREATE INDEX ix_timeadded ON dbtrack_actions(timeadded);
 CREATE INDEX ix_actiontype ON dbtrack_actions(actiontype);
 CREATE INDEX ix_groupid ON dbtrack_actions(groupid);
+CREATE INDEX ix_brokenchain ON dbtrack_actions(brokenchain);
 
 CREATE TABLE dbtrack_data (
   id SERIAL CONSTRAINT datakey PRIMARY KEY,
